@@ -20,6 +20,15 @@ const setAlert = w => {
   return w
 }
 
+const documentEventListeners = []
+function restoreDocumentEventListeners(document: Document) {
+  if (documentEventListeners && documentEventListeners.length)  {
+    documentEventListeners.forEach(documentEventListener => {
+      document.addEventListener(documentEventListener.event, documentEventListener.listener)
+    })
+  }
+}
+
 /** Initialize an empty document w/ ReactDOM and DOM events.
     @function   cy.injectReactDOM
 **/
@@ -39,8 +48,8 @@ Cypress.Commands.add('injectReactDOM', () => {
       <meta charset="utf-8">
     </head>
     <body>
-      <div id="cypress-jsdom"></div>
-      ${scripts}
+    <div id="cypress-jsdom"></div>
+    ${scripts}
     </body>`
 
     const document = cy.state('document')
@@ -48,7 +57,6 @@ Cypress.Commands.add('injectReactDOM', () => {
     document.close()
   })
 })
-
 Cypress.stylesCache = stylesCache
 
 /** Caches styles from previously compiled components for reuse
@@ -56,7 +64,7 @@ Cypress.stylesCache = stylesCache
     @param      {Object}  component
 **/
 Cypress.Commands.add('copyComponentStyles', component => {
-  // need to find same component when component is recompiled
+  // need to find same component when c`omponent is recompiled
   // by the JSX preprocessor. Thus have to use something else,
   // like component name
   const parentDocument = window.parent.document
@@ -126,6 +134,18 @@ export const mount = (jsx, alias) => {
         }
       })
     })
+    .then(win => {
+      const document = win.document
+      restoreDocumentEventListeners(document)
+
+      const originalAddEventListener = document.addEventListener
+      cy.stub(document, "addEventListener", (event, listener) => {
+        documentEventListeners.push({event, listener})
+        originalAddEventListener(event, listener)
+      });
+
+      return win
+    })
     .then(setXMLHttpRequest)
     .then(setAlert)
     .then(win => {
@@ -183,7 +203,7 @@ Before All
   Format: [{name, type, location}, ...]
 */
 before(() => {
-  const settings = Cypress.env('cypress-react-unit-test') || {}
+  const settings = Cypress.env('cypress-react-unit-test') || {};
 
   const moduleNames = [
     {
@@ -196,14 +216,14 @@ before(() => {
       type: 'file',
       location: settings['react-dom'] || 'node_modules/react-dom/umd/react-dom.development.js'
     }
-  ]
+  ];
 
-  Cypress.modules = []
+  Cypress.modules = [];
   cy.log('Initializing UMD module cache').then(() => {
     for (const module of moduleNames) {
-      let { name, type, location } = module
+      const { name, type, location } = module;
       cy.readFile(location, {log:false})
-        .then(source => Cypress.modules.push({ name, type, location, source }))
+        .then(source => Cypress.modules.push({ name, type, location, source }));
     }
-  })
-})
+  });
+});
