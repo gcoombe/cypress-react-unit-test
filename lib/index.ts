@@ -21,10 +21,10 @@ const setAlert = w => {
 }
 
 const documentEventListeners = []
-function restoreDocumentEventListeners(document: Document) {
+function restoreDocumentEventListeners(doc) {
   if (documentEventListeners && documentEventListeners.length)  {
     documentEventListeners.forEach(documentEventListener => {
-      document.addEventListener(documentEventListener.event, documentEventListener.listener)
+      doc.addEventListener(documentEventListener.event, documentEventListener.listener)
     })
   }
 }
