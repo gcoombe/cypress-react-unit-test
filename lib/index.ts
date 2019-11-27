@@ -24,7 +24,7 @@ const documentEventListeners = []
 function restoreDocumentEventListeners(doc) {
   if (documentEventListeners && documentEventListeners.length)  {
     documentEventListeners.forEach(documentEventListener => {
-      doc.addEventListener(documentEventListener.event, documentEventListener.listener)
+      doc.addEventListener(documentEventListener.event, documentEventListener.listener, documentEventListener.options)
     })
   }
 }
@@ -139,9 +139,12 @@ export const mount = (jsx, alias) => {
       restoreDocumentEventListeners(document)
 
       const originalAddEventListener = document.addEventListener
-      cy.stub(document, "addEventListener", (event, listener) => {
-        documentEventListeners.push({event, listener})
-        originalAddEventListener(event, listener)
+      cy.stub(document, "addEventListener", (event, listener, options) => {
+        const exists = documentEventListeners.some(documentEventListener => documentEventListener.event === event && documentEventListener.listener === listener);
+        if (!exists) {
+          documentEventListeners.push({event, listener, options})
+          originalAddEventListener(event, listener, options)
+        }
       });
 
       return win
